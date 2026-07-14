@@ -17,12 +17,19 @@ int main() {
     std::cout << "\n";
 
     // Initiate layer objects
-    ConvLayer conv(3); // The 3x3 filter for convolution layer [28x28 -> 26x26]
+    int num_filters = 32;
+    ConvLayer conv(num_filters, 3); // The number of 32 3x3 filters for convolution layer 32 * [28x28 -> 26x26]
     MaxPoolLayer pool(2, 2); // 2x2 pool, 2 step (stride) [26x26 -> 13x13]
-    SimpleMLP mlp(169, 64, 10); // 169 input node, 64 secret node, 10 output
+    SimpleMLP mlp(5408, 128, 10); // 169 input node, 64 secret node, 10 output
 
-    double learning_rate = 0.005;
+    double learning_rate = 0.01;
     int epochs = 50;
+
+    // For flattening
+    int poolRows = 13;
+    int poolCols = 13;
+    int mapSize = poolRows * poolCols;
+    Eigen::VectorXd flattened(num_filters * mapSize);
 
     std::cout << "X train size : " << X_train.size() << std::endl;
     std::cout << "X test size : " << X_test.size() << std::endl;
@@ -35,12 +42,19 @@ int main() {
 
         for (size_t i = 0; i < X_train.size(); i++) {
             // ================= FORWARD PROPAGATION =================
-            Eigen::MatrixXd convOutput = conv.forward(X_train[i]);
-            Eigen::MatrixXd poolOut = pool.forward(convOutput);
+            std::vector<Eigen::MatrixXd> convOutput = conv.forward(X_train[i]);
+            std::vector<Eigen::MatrixXd> poolOut = pool.forward(convOutput);
 
             // Flatten
-            Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> rowMajorMap(poolOut);
-            Eigen::VectorXd flattened = Eigen::Map<Eigen::VectorXd>(rowMajorMap.data(), rowMajorMap.size());
+            Eigen::VectorXd flattened(num_filters * mapSize);
+            for (int f = 0; f < num_filters; f++) {
+                // RowMajor read matrix
+                Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> rowMajorMap(poolOut[f]);
+                Eigen::VectorXd flatMap = Eigen::Map<Eigen::VectorXd>(rowMajorMap.data(), rowMajorMap.size());
+
+                // Place it in the relevant part of the vector.
+                flattened.segment(f * mapSize, mapSize) = flatMap;
+            }
 
             // Prediction
             Eigen::VectorXd prediction = mlp.forward(flattened);
@@ -54,12 +68,17 @@ int main() {
             // 1. Train mlp and get the error (dFlattened)
             Eigen::VectorXd dFlattened = mlp.backward(flattened, Y_train[i], learning_rate);
 
-            // 2. Unflatten: Convert the Vector to 2x2 Matrix
-            Eigen::Map<Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>> dPoolMap(dFlattened.data(), 13, 13);
-            Eigen::MatrixXd dPoolOutput = dPoolMap; // Copy to normal matrix
+            //Convert the Vector to 13x13 Matrices
+            std::vector<Eigen::MatrixXd> dPoolOutput(num_filters);
+            for (int f = 0; f < num_filters; f++) {
+                Eigen::VectorXd flatMap  = dFlattened.segment(f * mapSize, mapSize);
+
+                Eigen::Map<Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>> dPoolMap(flatMap.data(), poolRows, poolCols);
+                dPoolOutput[f] = dPoolMap;
+            }
 
             // 3. Pass the error through the pooling layer (Only pass it to the winning pixels)
-            Eigen::MatrixXd dConvOutput = pool.backward(dPoolOutput);
+            std::vector<Eigen::MatrixXd> dConvOutput = pool.backward(dPoolOutput);
 
             // 4. Train the convolution layer (Update filters)
             conv.backward(dConvOutput, learning_rate);
@@ -77,10 +96,19 @@ int main() {
     int correct_prediction = 0;
 
     for (size_t i = 0; i < X_test.size(); i++) {
-        Eigen::MatrixXd convOut = conv.forward(X_test[i]);
-        Eigen::MatrixXd poolOut = pool.forward(convOut);
-        Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> rowMajorMap(poolOut);
-        Eigen::VectorXd flattened = Eigen::Map<Eigen::VectorXd>(rowMajorMap.data(), rowMajorMap.size());
+        std::vector<Eigen::MatrixXd> convOut = conv.forward(X_test[i]);
+        std::vector<Eigen::MatrixXd> poolOut = pool.forward(convOut);
+        
+        Eigen::VectorXd flattened(num_filters * mapSize);
+        for (int f = 0; f < num_filters; f++) {
+            // RowMajor read matrix
+            Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> rowMajorMap(poolOut[f]);
+            Eigen::VectorXd flatMap = Eigen::Map<Eigen::VectorXd>(rowMajorMap.data(), rowMajorMap.size());
+
+            // Place it in the relevant part of the vector.
+            flattened.segment(f * mapSize, mapSize) = flatMap;
+        }
+
         Eigen::VectorXd prediction = mlp.forward(flattened);
 
         Eigen::Index prediction_value, real_value;

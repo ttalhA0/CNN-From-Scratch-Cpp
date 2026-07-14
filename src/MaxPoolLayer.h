@@ -2,6 +2,7 @@
 #define MAX_POOL_LAYER
 
 #include <Eigen/Dense>
+#include <vector>
 
 class MaxPoolLayer {
     private:
@@ -9,16 +10,16 @@ class MaxPoolLayer {
         int stride; // how many pixels will the filter skip?
 
         // Memory for backpropagation
-        Eigen::MatrixXi maxRowIndices;
-        Eigen::MatrixXi maxColIndices;
+        std::vector<Eigen::MatrixXi> maxRowIndices;
+        std::vector<Eigen::MatrixXi> maxColIndices;
 
         int lastInputRows;
         int lastInputCols;
 
     public:
         MaxPoolLayer(int pSize, int s) : poolSize(pSize), stride(s) {}
-        Eigen::MatrixXd forward(const Eigen::MatrixXd& inputMap);
-        Eigen::MatrixXd backward(const Eigen::MatrixXd& dOutput);
+        std::vector<Eigen::MatrixXd> forward(const std::vector<Eigen::MatrixXd>& inputMaps);
+        std::vector<Eigen::MatrixXd> backward(const std::vector<Eigen::MatrixXd>& dOutput);
 };
 
 #endif

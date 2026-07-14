@@ -2,24 +2,26 @@
 #define CNV_LAYER
 
 #include <iostream>
+#include <vector>
 #include <Eigen/Dense>
 
 class ConvLayer {
     private:
-        Eigen::MatrixXd filter;
-        double bias;
+        int num_filters;
         int filter_size;
+        std::vector<Eigen::MatrixXd> filters;
+        std::vector<double> biases;
 
         Eigen::MatrixXd lastInputImage;
-        Eigen::MatrixXd lastPreRelu; // Raw convolution results before ReLU implementation
+        std::vector<Eigen::MatrixXd> lastPreRelu; // Raw convolution results before ReLU implementation
 
     public:
-        ConvLayer(int fSize) : filter(Eigen::MatrixXd::Random(fSize, fSize)), bias(0.0), filter_size(fSize) {}
+        ConvLayer(int numFilters, int fSize);
 
-        Eigen::MatrixXd forward(const Eigen::MatrixXd& inputImage);
-        void backward(const Eigen::MatrixXd& dOutput, double learning_rate);
+        std::vector<Eigen::MatrixXd> forward(const Eigen::MatrixXd& inputImage);
+        void backward(const std::vector<Eigen::MatrixXd>& dOutput, double learning_rate);
 
-        void printFilter() {std::cout << "ConvLayer Available Filter (Kernel):\n" << filter << "\n\n";}
+        //void printFilter() {std::cout << "ConvLayer Available Filter (Kernel):\n" << filters << "\n\n";}
 };
 
 #endif
