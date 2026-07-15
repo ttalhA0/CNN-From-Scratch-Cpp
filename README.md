@@ -9,43 +9,43 @@ The goal of this project is to understand the inner workings of CNNs by implemen
 ## 📐 Network Architecture
 
 ```
-Input (28×28) → Conv2D (3×3, ReLU) → MaxPool (2×2) → Flatten → Dense (169→64, Sigmoid) → Dense (64→10, Sigmoid) → Output
+Input (28×28) → Conv2D (32×3×3, ReLU) → MaxPool (2×2) → Flatten → Dense (5408→128, Sigmoid) → Dense (128→10, Sigmoid) → Output
 ```
 
 | Layer | Input | Output | Parameters | Activation |
 |-------|-------|--------|------------|------------|
-| Convolution | 28×28 | 26×26 | 10 | ReLU |
-| Max Pooling | 26×26 | 13×13 | 0 | — |
-| Flatten | 13×13 | 169 | 0 | — |
-| Hidden (FC) | 169 | 64 | 10,880 | Sigmoid |
-| Output (FC) | 64 | 10 | 650 | Sigmoid |
-| **Total** | | | **11,540** | |
+| Convolution | 28×28 | 32 × 26×26 | 320 | ReLU |
+| Max Pooling | 32 × 26×26 | 32 × 13×13 | 0 | — |
+| Flatten | 32 × 13×13 | 5,408 | 0 | — |
+| Hidden (FC) | 5,408 | 128 | 692,352 | Sigmoid |
+| Output (FC) | 128 | 10 | 1,290 | Sigmoid |
+| **Total** | | | **693,962** | |
 
 ---
 
 ## 📊 Training Results
 
-Trained on **3,000** images for **50 epochs** with a learning rate of **0.005**.
+Trained on **3,000** images for **50 epochs** with a learning rate of **0.01**.
 
 <details>
 <summary>Training Log (click to expand)</summary>
 
 ```
-Epoch: 0        | Average Error: 1.12609
-Epoch: 1        | Average Error: 0.812946
-Epoch: 2        | Average Error: 0.758806
-Epoch: 3        | Average Error: 0.705263
-Epoch: 4        | Average Error: 0.654006
-Epoch: 5        | Average Error: 0.607336
-Epoch: 10       | Average Error: 0.464426
-Epoch: 15       | Average Error: 0.380022
-Epoch: 20       | Average Error: 0.328199
-Epoch: 25       | Average Error: 0.292130
-Epoch: 30       | Average Error: 0.264245
-Epoch: 35       | Average Error: 0.242176
-Epoch: 40       | Average Error: 0.224356
-Epoch: 45       | Average Error: 0.209403
-Epoch: 49       | Average Error: 0.198969
+Epoch: 0        | Average Error: 1.06051
+Epoch: 1        | Average Error: 0.776639
+Epoch: 2        | Average Error: 0.688637
+Epoch: 3        | Average Error: 0.602865
+Epoch: 4        | Average Error: 0.534134
+Epoch: 5        | Average Error: 0.475726
+Epoch: 10       | Average Error: 0.308839
+Epoch: 15       | Average Error: 0.227701
+Epoch: 20       | Average Error: 0.183630
+Epoch: 25       | Average Error: 0.154389
+Epoch: 30       | Average Error: 0.132493
+Epoch: 35       | Average Error: 0.120169
+Epoch: 40       | Average Error: 0.109045
+Epoch: 45       | Average Error: 0.099879
+Epoch: 49       | Average Error: 0.094796
 ```
 
 </details>
@@ -53,8 +53,8 @@ Epoch: 49       | Average Error: 0.198969
 ### Test Accuracy
 
 ```
-601 / 750 correct predictions
-Accuracy: 80.13%
+649 / 750 correct predictions
+Accuracy: 86.53%
 ```
 
 
@@ -82,13 +82,13 @@ cpp-cnn-from-scratch/
 ## ⚙️ Implementation Details
 
 ### Convolution Layer
-- Applies a single 3×3 learnable filter via sliding window
+- Applies **32 independent 3×3 learnable filters**, each producing a separate feature map
 - ReLU activation: `max(0, x)`
-- Backpropagation computes filter gradients through cross-correlation of the input with upstream gradients
+- Backpropagation computes per-filter gradients through cross-correlation of the input with upstream gradients
 
 ### Max Pooling Layer
-- 2×2 window with stride 2
-- Stores the indices of maximum values for gradient routing during backpropagation
+- 2×2 window with stride 2, applied independently to each of the 32 feature maps
+- Stores the indices of maximum values per channel for gradient routing during backpropagation
 - Only the "winning" pixels receive gradients during the backward pass
 
 ### Fully Connected Layers (MLP)
@@ -153,11 +153,12 @@ cpp-cnn-from-scratch/
 
 | Parameter | Value |
 |-----------|-------|
-| Learning Rate | 0.005 |
+| Learning Rate | 0.01 |
 | Epochs | 50 |
+| Number of Filters | 32 |
 | Filter Size | 3×3 |
 | Pool Size | 2×2 |
-| Hidden Nodes | 64 |
+| Hidden Nodes | 128 |
 | Output Nodes | 10 |
 | Loss Function | MSE |
 | Training Samples | 3,000 |
