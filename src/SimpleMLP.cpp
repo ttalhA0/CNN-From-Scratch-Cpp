@@ -1,4 +1,6 @@
 #include "SimpleMLP.h"
+#include <fstream>
+#include <stdexcept>
 
 SimpleMLP::SimpleMLP (int inputNodes, int hiddenNodes, int outputNodes) {
     // We initiate weights between -1 and 1 randomly.
@@ -72,4 +74,36 @@ void SimpleMLP::train(const std::vector<Eigen::VectorXd>& X_train, const std::ve
         }
     }
     std::cout << "TRAINING IS COMPLETED\n\n";
+}
+
+void SimpleMLP::saveWeights(const std::string& filename) {
+    std::ofstream out(filename, std::ios::binary);
+    if (!out.is_open()) {
+        throw std::runtime_error("Weights of the MLP cannot be saved: " + filename);
+    }
+
+    out.write(reinterpret_cast<const char*>(W1.data()), W1.size() * sizeof(double));
+    out.write(reinterpret_cast<const char*>(b1.data()), b1.size() * sizeof(double));
+    
+    out.write(reinterpret_cast<const char*>(W2.data()), W2.size() * sizeof(double));
+    out.write(reinterpret_cast<const char*>(b2.data()), b2.size() * sizeof(double));
+
+    out.close();
+}
+
+void SimpleMLP::loadWeights(const std::string& filename) {
+    std::ifstream in(filename, std::ios::binary);
+    if (!in.is_open()) {
+        throw std::runtime_error("MLP agirliklari okunamadi: " + filename);
+    }
+
+    // When reading, it is crucial that the dimensions of the matrices are predefined in the constructor.
+    // Otherwise, you will get a Segmentation Fault error.
+    in.read(reinterpret_cast<char*>(W1.data()), W1.size() * sizeof(double));
+    in.read(reinterpret_cast<char*>(b1.data()), b1.size() * sizeof(double));
+    
+    in.read(reinterpret_cast<char*>(W2.data()), W2.size() * sizeof(double));
+    in.read(reinterpret_cast<char*>(b2.data()), b2.size() * sizeof(double));
+
+    in.close();
 }

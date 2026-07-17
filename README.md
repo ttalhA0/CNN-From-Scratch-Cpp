@@ -65,7 +65,9 @@ Accuracy: 86.53%
 ```
 cpp-cnn-from-scratch/
 ├── src/
-│   ├── main.cpp            # Training and testing pipeline
+│   ├── train.cpp           # Training pipeline (saves weights to .bin)
+│   ├── inference.cpp       # Inference pipeline (loads weights from .bin)
+│   ├── ConfigParser.h      # Custom parser for reading hyperparameter config
 │   ├── ConvLayer.h/.cpp    # Convolution layer (forward & backward)
 │   ├── MaxPoolLayer.h/.cpp # Max pooling layer (forward & backward)
 │   ├── SimpleMLP.h/.cpp    # Fully connected layers (forward & backward)
@@ -73,6 +75,7 @@ cpp-cnn-from-scratch/
 ├── scripts/
 │   └── mnist_to_csv.py     # Converts MNIST binary to CSV
 ├── data/                   # MNIST dataset files (not included)
+├── config.txt              # Dynamically loaded hyperparameters
 ├── Makefile                # Build configuration
 └── README.md
 ```
@@ -99,6 +102,11 @@ cpp-cnn-from-scratch/
 ### Data Pipeline
 - A Python script converts MNIST IDX binary files to CSV format
 - The C++ file reader parses CSV, applies one-hot encoding for labels, and normalizes pixel values to [0, 1]
+
+### Production-Ready Pipeline
+- **Decoupled Architecture:** The system is split into two independent executables: `train` and `inference`.
+- **Weight I/O:** Model parameters are securely saved and loaded as binary blocks (`.bin`) using standard C++ I/O streams, ensuring rapid memory allocation without overhead.
+- **Dynamic Configuration:** Hyperparameters are parsed dynamically from `config.txt` at runtime. The Flatten layer size is automatically computed, completely eliminating the need for recompilation during experimentation.
 
 ---
 
@@ -141,12 +149,28 @@ cpp-cnn-from-scratch/
     python scripts/mnist_to_csv.py
     ```
 
-5. **Build and run**
+5. **Build the executables**
     ```bash
     make
-    ./cnn_mnist
     ```
 
+6. **Run Training**
+    ```bash
+    # Trains the model using config.txt and saves weights to .bin files
+    ./train
+    
+    # Or specify a custom dataset path:
+    ./train -d data/custom_training_set.csv
+    ```
+
+7. **Run Inference**
+    ```bash
+    # Loads .bin weights and evaluates the network on the test set
+    ./inference
+
+    # Or specify a custom test dataset path:
+    ./inference -d data/custom_test_set.csv
+    ```
 ---
 
 ## 🛠️ Hyperparameters

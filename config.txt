@@ -1,0 +1,9 @@
+# CNN Hyperparameters Configuration
+learning_rate 0.01
+epochs 50
+num_filters 32
+filter_size 3
+pool_size 2
+stride 2
+hidden_nodes 128
+output_nodes 10

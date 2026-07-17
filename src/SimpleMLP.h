@@ -5,6 +5,7 @@
 #include <Eigen/Dense>
 #include <cmath>
 #include <vector>
+#include <string>
 #include "fileReader.h"
 
 /*
@@ -44,6 +45,9 @@ class SimpleMLP {
         Eigen::VectorXd backward(const Eigen::VectorXd& X, const Eigen::VectorXd Y, double learning_rate);
 
         void train(const std::vector<Eigen::VectorXd>& X_train, const std::vector<Eigen::VectorXd>& Y_train, int epochs, double learning_rate);
+
+        void saveWeights(const std::string& filename);
+        void loadWeights(const std::string& filename);
 };
 
 

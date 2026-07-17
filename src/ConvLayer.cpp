@@ -2,6 +2,8 @@
 #include <Eigen/Dense>
 #include <iostream>
 #include <algorithm>
+#include <fstream>
+#include <stdexcept>
 
 ConvLayer::ConvLayer(int numFilters, int fSize) : num_filters(numFilters), filter_size(fSize) {
     for (int i = 0; i < numFilters; i++) {
@@ -80,4 +82,36 @@ void ConvLayer::backward(const std::vector<Eigen::MatrixXd>& dOutput, double lea
         this->filters[f] -= learning_rate * dFilter;
         this->biases[f] -= learning_rate * dBias;
     }
+}
+
+void ConvLayer::saveWeights(const std::string& filename) {
+    std::ofstream out(filename, std::ios::binary);
+    if (!out.is_open())
+        throw std::runtime_error("Weights of the ConvLayer cannot be saved: " + filename);
+
+    // Write Filters one by one
+    for (int f = 0; f < this->num_filters; f++) {
+        out.write(reinterpret_cast<const char*>(filters[f].data()), filters[f].size() * sizeof(double));
+    }
+
+    // Write Biases
+    out.write(reinterpret_cast<const char*>(biases.data()), biases.size() * sizeof(double));
+
+    out.close();
+}
+
+void ConvLayer::loadWeights(const std::string& filename) {
+    std::ifstream in(filename, std::ios::binary);
+    if (!in.is_open())
+        throw std::runtime_error("Weights of the ConvLayer cannot be loaded: " + filename);
+
+    // Read Filters one by one
+    for (int f = 0; f < this->num_filters; f++) {
+        in.read(reinterpret_cast<char*>(filters[f].data()), filters[f].size() * sizeof(double));
+    }
+    
+    // Read Biases
+    in.read(reinterpret_cast<char*>(biases.data()), biases.size() * sizeof(double));
+
+    in.close();
 }

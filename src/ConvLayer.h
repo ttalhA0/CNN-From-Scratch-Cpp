@@ -4,6 +4,7 @@
 #include <iostream>
 #include <vector>
 #include <Eigen/Dense>
+#include <string>
 
 class ConvLayer {
     private:
@@ -20,6 +21,9 @@ class ConvLayer {
 
         std::vector<Eigen::MatrixXd> forward(const Eigen::MatrixXd& inputImage);
         void backward(const std::vector<Eigen::MatrixXd>& dOutput, double learning_rate);
+
+        void saveWeights(const std::string& filename);
+        void loadWeights(const std::string& filename);
 
         //void printFilter() {std::cout << "ConvLayer Available Filter (Kernel):\n" << filters << "\n\n";}
 };
